@@ -73,6 +73,8 @@ p_future = np.zeros((nz, nx))
 
 c0 = 2  # [m/s]
 
+# MELHORAR A PARTE ABAIXO:
+
 c = np.zeros((nz, nx))
 c[:] = c0
 c[28, :] = 2.0000167479108724
