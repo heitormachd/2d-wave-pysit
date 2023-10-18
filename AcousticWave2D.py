@@ -66,6 +66,8 @@ source = ricker(tt, am)
 # plt.plot(source)
 # plt.show()
 
+#testeteste
+
 p_present = np.zeros((nz, nx))
 p_past = np.zeros((nz, nx))
 p_future = np.zeros((nz, nx))
@@ -77,7 +79,7 @@ c0 = 2  # [m/s]
 
 c = np.zeros((nz, nx))
 c[:] = c0
-c[28, :] = 2.0000167479108724
+c[28, :] = 2.000016747910872
 c[29, :] = 2.0048261353405694
 c[30, :] = 2.158098836842796
 c[31, :] = 2.3894003915357027
