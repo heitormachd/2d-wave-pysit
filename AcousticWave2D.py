@@ -52,6 +52,26 @@ dz = (Lz/nz)  # [m/n]
 Tt = np.linspace(0, T-dt, nt)
 
 
+xrow = np.linspace(xmin, xmax, nx)
+zrow = np.linspace(zmin, zmax, nz)
+tup = np.meshgrid(xrow, zrow)
+grid = tuple([(x.reshape(nx*nz)) for x in tup])
+
+
+Z = grid[-1]
+drop_threshold = 1e-7
+
+
+def _gaussian_derivative_pulse(ZZ, threshold, **kwargs):
+    """ Derivative of a Gaussian at a specific sigma """
+    T = -100.0*ZZ*np.exp(-(ZZ**2)/1e-4)
+    T[np.where(abs(T) < threshold)] = 0
+    return T
+
+
+gaussian_derivative = _gaussian_derivative_pulse(Z, drop_threshold)
+
+
 def ricker(t, a):
     # x = np.diff(np.diff(np.exp(-t**2/a))/dt)/dt
     x = np.exp(-t**2/a)*(4*t**2/a**2-2/a)
