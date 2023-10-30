@@ -39,7 +39,7 @@ xmax = 1.0
 zmin = 0.1
 zmax = 0.8
 
-p = 1
+p = 3
 
 Lx = (xmax - xmin) * p
 Lz = (zmax - zmin) * p  # [m]
@@ -50,6 +50,26 @@ dz = (Lz/nz)  # [m/n]
 
 
 Tt = np.linspace(0, T-dt, nt)
+
+
+xrow = np.linspace(xmin, xmax, nx)
+zrow = np.linspace(zmin, zmax, nz)
+tup = np.meshgrid(xrow, zrow)
+grid = tuple([(x.reshape(nx*nz)) for x in tup])
+
+
+Z = grid[-1]
+drop_threshold = 1e-7
+
+
+def _gaussian_derivative_pulse(ZZ, threshold, **kwargs):
+    """ Derivative of a Gaussian at a specific sigma """
+    T = -100.0*ZZ*np.exp(-(ZZ**2)/1e-4)
+    T[np.where(abs(T) < threshold)] = 0
+    return T
+
+
+gaussian_derivative = _gaussian_derivative_pulse(Z, drop_threshold)
 
 
 def ricker(t, a):
@@ -73,31 +93,33 @@ p_future = np.zeros((nz, nx))
 
 c0 = 2  # [m/s]
 
+# MELHORAR A PARTE ABAIXO:
+
 c = np.zeros((nz, nx))
 c[:] = c0
-c[28, :] = 2.0000167479108724
-c[29, :] = 2.0048261353405694
-c[30, :] = 2.158098836842796
-c[31, :] = 2.3894003915357027
-c[32, :] = 1.6105996084642973
-c[33, :] = 1.841901163157204
-c[34, :] = 1.9951738646594308
-c[35, :] = 1.9999832520891276
+c[28 * p, :] = 2.000016747910872
+c[29 * p, :] = 2.0048261353405694
+c[30 * p, :] = 2.158098836842796
+c[31 * p, :] = 2.3894003915357027
+c[32 * p, :] = 1.6105996084642973
+c[33 * p, :] = 1.841901163157204
+c[34 * p, :] = 1.9951738646594308
+c[35 * p, :] = 1.9999832520891276
 
-c[42, :] = 2.0000167479108724
-c[43, :] = 2.0048261353405694
-c[44, :] = 2.158098836842796
-c[45, :] = 2.3894003915357027
-c[46, :] = 1.6105996084642973
-c[47, :] = 1.841901163157204
-c[48, :] = 1.9951738646594308
-c[49, :] = 1.9999832520891276
+c[42 * p, :] = 2.0000167479108724
+c[43 * p, :] = 2.0048261353405694
+c[44 * p, :] = 2.158098836842796
+c[45 * p, :] = 2.3894003915357027
+c[46 * p, :] = 1.6105996084642973
+c[47 * p, :] = 1.841901163157204
+c[48 * p, :] = 1.9951738646594308
+c[49 * p, :] = 1.9999832520891276
 
 
 # shots
 nr = np.arange(nx)  # n do receptor
 
-zpos = int(((1./9.)*zmax)/dz)   # [n]
+zpos = int(((1./9.)*zmax)/dz) * p   # [n]
 
 pos_rec_x = nr.copy()
 pos_rec_z = zpos * np.ones_like(nr)  # matriz posição do receptor
@@ -127,12 +149,15 @@ for nt in range(nt):
     p_future[:, -1] = 0
 
     act[nt, :] = p_future[pos_rec_z, pos_rec_x]
+    act[nt, :] /= 100
+    act[nt, :] *= -1
 
-    plt.imsave(f"images/plot_{nt}.png", p_future, cmap='gray',vmin=-5, vmax=5)
+#     plt.imsave(f"images/plot_{nt}.png", p_future, cmap='gray')
 
-create_gif_and_video(nt)
+# create_gif_and_video(nt)
 
 # plot shot
+print(f'minimo: {np.amin(act)}\nmaximo: {np.amax(act)}')
 plt.figure()
 plt.imshow(act, origin='upper', aspect='auto')
 plt.colorbar()
