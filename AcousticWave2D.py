@@ -39,7 +39,7 @@ xmax = 1.0
 zmin = 0.1
 zmax = 0.8
 
-p = 3
+p = 1
 
 Lx = (xmax - xmin) * p
 Lz = (zmax - zmin) * p  # [m]
@@ -51,25 +51,29 @@ dz = (Lz/nz)  # [m/n]
 
 Tt = np.linspace(0, T-dt, nt)
 
-
 xrow = np.linspace(xmin, xmax, nx)
 zrow = np.linspace(zmin, zmax, nz)
-tup = np.meshgrid(xrow, zrow)
+tup = np.meshgrid(zrow, xrow)
 grid = tuple([(x.reshape(nx*nz)) for x in tup])
 
-
-Z = grid[-1]
+Z = grid[0]
 drop_threshold = 1e-7
 
 
-def _gaussian_derivative_pulse(ZZ, threshold, **kwargs):
+def _gaussian_derivative_pulse(ZZ, threshold):
     """ Derivative of a Gaussian at a specific sigma """
-    T = -100.0*ZZ*np.exp(-(ZZ**2)/1e-4)
+    T = -100.0 * ZZ * np.exp(-(ZZ ** 2) / 1e-4)
     T[np.where(abs(T) < threshold)] = 0
     return T
 
 
-gaussian_derivative = _gaussian_derivative_pulse(Z, drop_threshold)
+# Usado para criar os refletores:
+dC = np.zeros(6461)
+for depth in (0.45, 0.65):
+    dC += _gaussian_derivative_pulse(Z - (zmin +
+                                     depth * (zmax - zmin)), drop_threshold)
+
+dC = dC.reshape(6461, 1)
 
 
 def ricker(t, a):
@@ -90,31 +94,14 @@ p_present = np.zeros((nz, nx))
 p_past = np.zeros((nz, nx))
 p_future = np.zeros((nz, nx))
 
-
 c0 = 2  # [m/s]
 
-# MELHORAR A PARTE ABAIXO:
-
-c = np.zeros((nz, nx))
+c = np.zeros((nz * nx))
+c = c.reshape(nz * nx, 1)
 c[:] = c0
-c[28 * p, :] = 2.000016747910872
-c[29 * p, :] = 2.0048261353405694
-c[30 * p, :] = 2.158098836842796
-c[31 * p, :] = 2.3894003915357027
-c[32 * p, :] = 1.6105996084642973
-c[33 * p, :] = 1.841901163157204
-c[34 * p, :] = 1.9951738646594308
-c[35 * p, :] = 1.9999832520891276
-
-c[42 * p, :] = 2.0000167479108724
-c[43 * p, :] = 2.0048261353405694
-c[44 * p, :] = 2.158098836842796
-c[45 * p, :] = 2.3894003915357027
-c[46 * p, :] = 1.6105996084642973
-c[47 * p, :] = 1.841901163157204
-c[48 * p, :] = 1.9951738646594308
-c[49 * p, :] = 1.9999832520891276
-
+c[:] += dC
+c = c.reshape(nx, nz)
+c = c.T
 
 # shots
 nr = np.arange(nx)  # n do receptor
@@ -130,7 +117,6 @@ source_z = zpos  # posição da fonte
 # pos_rec = pos_rec.astype(int)
 
 act = np.zeros((nt, nx))  # matriz das aquisições no tempo
-
 
 for nt in range(nt):
 
@@ -149,17 +135,16 @@ for nt in range(nt):
     p_future[:, -1] = 0
 
     act[nt, :] = p_future[pos_rec_z, pos_rec_x]
-    act[nt, :] /= 100
-    act[nt, :] *= -1
 
-#     plt.imsave(f"images/plot_{nt}.png", p_future, cmap='gray')
+    # plt.imsave(f"images/plot_{nt}.png", p_future, cmap='gray')
 
 # create_gif_and_video(nt)
 
 # plot shot
-print(f'minimo: {np.amin(act)}\nmaximo: {np.amax(act)}')
 plt.figure()
 plt.imshow(act, origin='upper', aspect='auto')
 plt.colorbar()
 plt.show()
-print('done')
+
+# Para colocar breakpoint
+pass
